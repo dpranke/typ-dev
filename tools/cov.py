@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import argparse
 import sys
 import textwrap
 
-is_python3 = bool(sys.version_info.major == 3)
 
-
-ALL_PRAGMAS = ['no cover', 'no win32', 'python2', 'python3', 'untested',
-               'win32']
+ALL_PRAGMAS = ['no cover', 'no win32', 'untested', 'win32']
 DEFAULT_PRAGMAS = ALL_PRAGMAS[:]
-
-if is_python3:
-    DEFAULT_PRAGMAS.remove('python3')
-else:
-    DEFAULT_PRAGMAS.remove('python2')
 
 if sys.platform == 'win32':
     DEFAULT_PRAGMAS.remove('win32')
@@ -60,8 +50,6 @@ def add_arguments(parser):
         'no cover': The default coverage pragma, this now means we
                     truly cannot cover it.
         'no win32': Code that only executes when not on Windows.
-        'python2':  Code that only executes under Python2.
-        'python3':  Code that only executes under Python3.
         'untested': Code that does not yet have tests.
         'win32':    Code that only executes on Windows.
 
