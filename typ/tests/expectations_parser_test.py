@@ -865,7 +865,8 @@ crbug.com/12345 [ tag3 tag4 ] b1/s1 [ Skip ]
             '[ intel ] b1/s1 [ RetryOnFailure ]\n'
             'crbug.com/2432 [ intel ] b1/s2 [ Pass ] # c2\n'
             'crbug.com/2431 [ intel ] b1/s* [ RetryOnFailure ]\n')
-        test_exp1 = expectations_parser.TestExpectations(['Linux'])
+        test_exp1 = expectations_parser.TestExpectations(['Linux'],
+                                                         ignored_tags=['intel'])
         ret, _ = test_exp1.parse_tagged_list(raw_data1)
         self.assertEqual(ret, 0)
         test_exp2 = expectations_parser.TestExpectations(['Intel'])
@@ -966,7 +967,8 @@ crbug.com/12345 [ tag3 tag4 ] b1/s1 [ Skip ]
             '[ intel ] b1/s1 [ RetryOnFailure ]\n'
             'crbug.com/2432 [ intel ] b1/s2 [ Pass Slow ]\n'
             'crbug.com/2431 [ intel ] b1/s* [ RetryOnFailure ]\n')
-        test_exp1 = expectations_parser.TestExpectations(['Linux'])
+        test_exp1 = expectations_parser.TestExpectations(['Linux'],
+                                                         ignored_tags=['intel'])
         ret, _ = test_exp1.parse_tagged_list(raw_data1)
         self.assertEqual(ret, 0)
         test_exp2 = expectations_parser.TestExpectations(['Intel'])
