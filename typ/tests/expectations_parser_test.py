@@ -151,7 +151,7 @@ class ExpectationTest(unittest.TestCase):
                                             results=['FAIL'],
                                             trailing_comments=' # comment',
                                             is_glob=True)
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             AssertionError, '.*the test value must end in an asterisk'):
             e.to_string()
 
@@ -163,7 +163,7 @@ class ExpectationTest(unittest.TestCase):
 
         # Failure, empty.
         e = expectations_parser.Expectation()
-        with self.assertRaisesRegexp(ValueError,
+        with self.assertRaisesRegex(ValueError,
                                      'Cannot set test to empty string'):
             e.test = ''
 
@@ -174,7 +174,7 @@ class ExpectationTest(unittest.TestCase):
 
         # Failure, limited wildcard without trailing *.
         e = expectations_parser.Expectation(is_glob=True)
-        with self.assertRaisesRegexp(ValueError,
+        with self.assertRaisesRegex(ValueError,
                                      ('test value for glob type expectations '
                                       'without full wildcard support must end '
                                       'with an asterisk')):
@@ -624,7 +624,7 @@ crbug.com/12345 [ tag3 tag4 ] b1/s1 [ Skip ]
             '# full_wildcard_support: asdf\n'
             'crbug.com/1234 [ linux ] b1/s1 [ Failure ]\n'
             'crbug.com/2345 [ linux ] b2/* [ Failure ]\n')
-        with self.assertRaisesRegexp(expectations_parser.ParseError,
+        with self.assertRaisesRegex(expectations_parser.ParseError,
                                      ("Unrecognized value 'asdf' given for "
                                       'full_wildcard_support descriptor')):
             expectations_parser.TaggedTestListParser(raw_data)
@@ -790,7 +790,7 @@ crbug.com/12345 [ tag3 tag4 ] b1/s1 [ Skip ]
             '[ win ] foo.html [ Failure ]\n')
         parser = expectations_parser.TestExpectations()
         parser.parse_tagged_list(initial_data)
-        with self.assertRaisesRegexp(RuntimeError,
+        with self.assertRaisesRegex(RuntimeError,
             'Existing tag sets .* do not match incoming sets .*'):
             parser.parse_tagged_list(secondary_data)
 

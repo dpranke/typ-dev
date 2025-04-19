@@ -220,7 +220,7 @@ class RunnerTests(TestCase):
 
 class FailureReasonExtractionTests(TestCase):
     def test_basecase(self):
-        input = """Traceback (most recent call last):
+        input = r"""Traceback (most recent call last):
   File "C:\somepath\my_test.py", line 45, in testSomething
     self.assertGreater(samples[0], 0, 'Sample from %s was not > 0' % name)
 AssertionError: 0 not greater than 0 : Sample from rasterize_time was not > 0
@@ -236,7 +236,7 @@ AssertionError: 0 not greater than 0 : Sample from rasterize_time was not > 0
         self.assertIsNone(fr)
 
     def test_trailing_stderr(self):
-        input = """Traceback (most recent call last):
+        input = r"""Traceback (most recent call last):
   File "C:\somepath\my_test.py", line 45, in testSomething
     self.assertSomething(...)
 AssertionError: Wanted "foo", got "bar"
@@ -248,7 +248,7 @@ This output should be ignored."""
             'my_test.py(45): AssertionError: Wanted "foo", got "bar"')
 
     def test_trailing_stdout(self):
-        input = """Traceback (most recent call last):
+        input = r"""Traceback (most recent call last):
   File "C:\somepath\my_test.py", line 45, in testSomething
     self.assertSomething(...)
 AssertionError: Wanted "foo", got "bar"
@@ -440,7 +440,7 @@ class ContextTests(TestCase):
         # This test is mostly intended to be called by
         # RunnerTests.test_context, above. It is not interesting on its own.
         if self.context:
-            self.assertEquals(self.context['foo'], 'bar')
+            self.assertEqual(self.context['foo'], 'bar')
 
 
 class FailureTests(TestCase):

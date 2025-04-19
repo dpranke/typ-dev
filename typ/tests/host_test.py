@@ -172,7 +172,7 @@ class TestHost(unittest.TestCase):
         s = FakeStream(encoding='cp1252')
         h.stdout = s
         h.print_('\u0442\u0435\u0441\u0442')
-        self.assertEquals(s.contents, '\\u0442\\u0435\\u0441\\u0442\n')
+        self.assertEqual(s.contents, '\\u0442\\u0435\\u0441\\u0442\n')
 
         s = FakeStream()
         h.stdout = s

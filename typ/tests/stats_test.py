@@ -46,10 +46,10 @@ class TestStats(unittest.TestCase):
     def test_current_rate(self):
         times = [0.0, 0.1, 0.2]
         s = Stats('[%c]', lambda: times.pop(0), 1)
-        self.assertEquals(s.format(), '[-]')
+        self.assertEqual(s.format(), '[-]')
         s.add_time()
         s.add_time()
-        self.assertEquals(s.format(), '[ 10.0]')
+        self.assertEqual(s.format(), '[ 10.0]')
 
     def test_overall_rate(self):
         times = [0, 0, 5]

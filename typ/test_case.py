@@ -145,11 +145,11 @@ class MainTestCase(TestCase):
         if out is not None:
             self.assertMultiLineEqual(out, actual_out)
         if rout is not None:
-            self.assertRegexpMatches(actual_out, rout)
+            self.assertRegex(actual_out, rout)
         if err is not None:
             self.assertMultiLineEqual(err, actual_err)
         if rerr is not None:
-            self.assertRegexpMatches(actual_err, rerr)
+            self.assertRegex(actual_err, rerr)
         if exp_files:
             self.assert_files(exp_files, actual_files, files_to_ignore)
 
