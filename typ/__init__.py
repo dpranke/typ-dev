@@ -67,11 +67,11 @@ from typ.runner import Runner, TestInput, TestSet, WinMultiprocessing, main
 from typ.stats import Stats
 from typ.printer import Printer
 from typ.test_case import convert_newlines, TestCase, MainTestCase
-from typ.version import VERSION
+from typ.version import VERSION, __version__
 
 __all__ = [
     'ArgumentParser',
-    'Expectation',
+    'Expectation'
     'FakeHost',
     'Host',
     'MainTestCase',
@@ -86,6 +86,7 @@ __all__ = [
     'TestInput',
     'TestSet',
     'VERSION',
+    '__version__',
     'WinMultiprocessing',
     'convert_newlines',
     'exit_code_from_full_results',
