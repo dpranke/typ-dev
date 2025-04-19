@@ -163,17 +163,10 @@ class Runner:
         
         subp = self.add_parser('tests', help='Run the tests.')
         subp.add_argument(
-            '-d',
-            '--durations',
-            metavar='N',
-            action='store',
-            help='show the N slowed test cases (N=0 for all)',
-        )
-        subp.add_argument(
-            '-f',
-            '--failfast',
+            '-t',
+            '--timing',
             action='store_true',
-            help='Stop on first fail or error',
+            help='show timing information',
         )
         subp.add_argument(
             '-u', '--unit', action='store_true', help='Only run unit tests.'
@@ -237,8 +230,7 @@ class Runner:
         )
         if self.args.verbose:
             cmd.append('-v')
-        for test in self.args.test:
-            cmd.extend(['-k', self._trim_test_glob(test)])
+        cmd.extend(self.args.test)
         self.call(cmd, env=env)
         cmd = self.run_cmd + ['-m', 'coverage', 'report', '--show-missing']
         if self.args.omit:
@@ -321,13 +313,9 @@ class Runner:
             cmd.append('-q')
         if self.args.verbose:
             cmd.append('-v')
-        if self.args.failfast:
-            cmd.append('-f')
-        if self.args.durations:
-            cmd.extend(['--durations', self.args.durations])
-
-        for test in self.args.test:
-            cmd.extend(['-k', self._trim_test_glob(test)])
+        if self.args.timing:
+            cmd.append('-t')
+        cmd.extend(self.args.test)
         env = os.environ.copy()
         if self.args.unit:
             env['SKIP'] = 'integration'
@@ -357,17 +345,6 @@ class Runner:
             + glob.glob(f'{self.package}/*.py')
             + glob.glob(f'{self.package}/tests/*.py')
         )
-
-    def _trim_test_glob(self, test):
-        if test.startswith('^'):
-            test = test[1:]
-        else:
-            test = '*' + test
-        if test.endswith('$'):
-            test = test[:-1]
-        else:
-            test = test + '*'
-        return test
 
     def _check_version(self):
         m = re.match(r'\d+\.\d+\.\d+(\.dev\d+)?', self.version)
