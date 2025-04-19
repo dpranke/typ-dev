@@ -16,7 +16,7 @@ import fnmatch
 import shlex
 import unittest
 
-from typ import python_2_3_compat
+from typ import host, python_2_3_compat
 
 
 def convert_newlines(msg):
@@ -25,10 +25,17 @@ def convert_newlines(msg):
 
 
 class TestCase(unittest.TestCase):
-    child = None
+    # Tests and subclasses may set this to be true to fail if the test is
+    # not actually being run under typ and the test calls something that
+    # actually requires typ. If this is set to true and we're not actually
+    # running under typ, any access to the TestCase-specific properties
+    # will fail.
+    typ_is_required = True
+
     context = None
     maxDiff = 80 * 66
     artifacts = None
+
     # Should be set if the test determines that it should be retried on
     # failure in some way outside of the normal test expectation approach.
     retryOnFailure = False
@@ -44,6 +51,23 @@ class TestCase(unittest.TestCase):
     # Any additional key/value pairs to report through ResultDB.
     additionalTags = {}
     chromium_build_directory = None
+
+    _child = None
+
+    @property
+    def child(self):
+        assert self.is_under_typ or not self.typ_is_required, (
+            'test must be run under typ'
+        )
+        return self._child
+
+    @child.setter
+    def child(self, value):
+        self._child = value
+
+    @property
+    def is_under_typ(self):
+        return self._child is not None
 
     def set_artifacts(self, artifacts):
         # We need this setter instead of setting artifacts directly so that
@@ -81,10 +105,9 @@ class MainTestCase(TestCase):
         self.assertEqual(interesting_files, set(expected_files.keys()))
 
     def make_host(self):
-        # If we are ever called by unittest directly, and not through typ,
-        # this will probably fail.
-        assert self.child
-        return self.child.host
+        if self.typ_is_required:
+            return self.child.host
+        return host.Host()
 
     def call(self, host, argv, stdin, env):
         return host.call(argv, stdin=stdin, env=env)
@@ -112,7 +135,7 @@ class MainTestCase(TestCase):
                 env = host.env.copy()
                 env.update(aenv)
 
-            if self.child.debugger:  # pragma: no cover
+            if self.typ_is_required and self.child.debugger:  # pragma: no cover
                 host.print_('')
                 host.print_('cd %s' % tmpdir, stream=host.stdout.stream)
                 host.print_(' '.join(prog + argv), stream=host.stdout.stream)

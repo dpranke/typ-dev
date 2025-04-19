@@ -235,6 +235,7 @@ path_to_main = os.path.join(
 
 
 class TestCli(test_case.MainTestCase):
+    typ_is_required = False
     prog = [sys.executable, path_to_main]
     files_to_ignore = ['*.pyc']
 

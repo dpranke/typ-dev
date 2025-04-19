@@ -66,6 +66,12 @@ def _PrefixDoesMatch(runner):
     return test_set
 
 
+# TODO: Because many of these tests use real Host objects they may end
+# up logging things to stdout or stderr. When the tests are run under
+# `unittest` instead of `typ`, the logged messages are unconditionally
+# displayed, rather than only displayed if there is an error or -vv is passed.
+# Think about whether we should suppress the logging even when run under
+# unittest. Or whether they really need to be using real Host objects at all.
 class RunnerTests(TestCase):
 
     def _PrefixDoesNotMatch(self, runner):
@@ -113,6 +119,10 @@ class RunnerTests(TestCase):
         self._PrefixDoesNotMatch(runner)
 
     def test_context(self):
+        if not self.is_under_typ:
+            self.skipTest('Must be run under typ')
+            return
+
         r = Runner()
         r.args.tests = ['typ.tests.runner_test.ContextTests']
         r.context = {'foo': 'bar'}

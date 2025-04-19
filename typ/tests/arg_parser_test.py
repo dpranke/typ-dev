@@ -16,6 +16,7 @@ import optparse
 import unittest
 
 from typ import ArgumentParser
+from typ.fakes.host_fake import FakeHost
 
 
 class ArgumentParserTest(unittest.TestCase):
@@ -31,9 +32,8 @@ class ArgumentParserTest(unittest.TestCase):
         self.assertEqual(options.jobs, 1)
 
     def test_argv_from_args(self):
-
         def check(argv, expected=None):
-            parser = ArgumentParser()
+            parser = ArgumentParser(host=FakeHost())
             args = parser.parse_args(argv)
             actual_argv = parser.argv_from_args(args)
             expected = expected or argv
@@ -45,11 +45,13 @@ class ArgumentParserTest(unittest.TestCase):
         check(['-vv'], ['--verbose', '--verbose'])
 
     def test_argv_from_args_foreign_argument(self):
-        parser = ArgumentParser()
+        host = FakeHost()
+        parser = ArgumentParser(host=host)
         parser.add_argument('--some-foreign-argument', default=False,
                             action='store_true')
         args = parser.parse_args(['--some-foreign-argument', '--verbose'])
-        self.assertEqual(['--verbose'], ArgumentParser().argv_from_args(args))
+        self.assertEqual(['--verbose'],
+                         ArgumentParser(host=host).argv_from_args(args))
 
     def test_valid_shard_options(self):
         parser = ArgumentParser()
@@ -63,9 +65,8 @@ class ArgumentParserTest(unittest.TestCase):
         parser.parse_args(['--total-shards', '5', '--shard-index', '0'])
         self.assertEqual(parser.exit_status, None)
 
-
     def test_invalid_shard_options(self):
-        parser = ArgumentParser()
+        parser = ArgumentParser(host=FakeHost())
 
         parser.parse_args(['--total-shards', '0'])
         self.assertEqual(parser.exit_status, 2)
@@ -81,7 +82,6 @@ class ArgumentParserTest(unittest.TestCase):
 
         parser.parse_args(['--total-shards', '5', '--shard-index', '6'])
         self.assertEqual(parser.exit_status, 2)
-
 
     def test_filter_coverage_options(self):
         parser = ArgumentParser()

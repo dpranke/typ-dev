@@ -19,8 +19,13 @@ from typ import test_case
 
 class TestDirectories(test_case.TestCase):
     def test_chromium_build_directory(self):
-        if not self.child.chromium_build_directory:
+        if not self.is_under_typ:
+            self.skipTest('Must be run with typ')
             return
+        if not self.chromium_build_directory:
+            self.skipTest('--chromium-build-directory not set')
+            return
+
         d = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                          '..', '..', 'tools'))
         self.assertEqual(self.chromium_build_directory, d)
@@ -28,8 +33,13 @@ class TestDirectories(test_case.TestCase):
                          os.environ['CHROMIUM_BUILD_DIRECTORY'])
 
     def test_starting_directory(self):
-        if not self.child.starting_directory:
+        if not self.is_under_typ:
+            self.skipTest('Must be run with typ')
             return
+        if not self.child.starting_directory:
+            self.skipTest('only makes sense when --starting-directory is set')
+            return
+
         self.assertEqual(os.getcwd(),
                          os.path.abspath(os.path.dirname(__file__)))
 
@@ -46,6 +56,7 @@ class TestFuncs(test_case.MainTestCase):
 
 
 class TestMainTestCase(test_case.MainTestCase):
+    typ_is_required = False
 
     def test_basic(self):
         h = self.make_host()

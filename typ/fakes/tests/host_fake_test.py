@@ -30,7 +30,7 @@ class TestFakeHost(host_test.TestHost):
 
     def test_add_to_path(self):
         # TODO: FakeHost uses the real sys.path, and then gets
-        # confused becayse host.abspath() doesn't work right for
+        # confused because host.abspath() doesn't work right for
         # windows-style paths.
         if sys.platform != 'win32':
             super(TestFakeHost, self).test_add_to_path()
@@ -49,6 +49,19 @@ class TestFakeHost(host_test.TestHost):
         self.assertEqual(ret, 0)
 
     def test_capture_output(self):
+        # When running with a FakeHost, host.stdout and host.stderr
+        # are StringIO()'s, and when we call capture_output() we replace
+        # sys.stdout and sys.stderr with them, but when we call
+        # restore_output() we reset sys.stdout and sys.stderr to the
+        # StringIO()s, *not* to the original sys.stdout and sys.stderr.
+        # This means we don't actually restore stdout and stderr properly.
+        # So, we cache the originals and forcibly restore them at the end
+        # of the test.
+        # TODO: Figure out if we can fix FakeHost.restore_output() to do
+        # the right thing so this isn't necessary.
+        orig_stdout = sys.stdout
+        orig_stderr = sys.stderr
+
         h = self.host()
         self.host = lambda: h
         super(TestFakeHost, self).test_capture_output()
@@ -66,6 +79,11 @@ class TestFakeHost(host_test.TestHost):
         self.assertEqual(err, 'on stderr\n')
         self.assertEqual(h.stdout.getvalue(), 'on stdout\n')
         self.assertEqual(h.stderr.getvalue(), 'on stderr\n')
+
+        # TODO: At this point, things are broken; sys.stdout and sys.stderr are
+        # now StringIOs, not TextIOWrappers, so we must explicitly reset them.
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
 
     def test_for_mp(self):
         h = self.host()
