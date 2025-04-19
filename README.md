@@ -41,7 +41,7 @@ provide a friendlier interface to the Python `unittest` module.
 
 After version v0.11.0 (Sep 4 2017), `typ` was imported into the [Catapult](https://chromium.googlesource.com/catapult) project (one of the Chromium subprojects) and that repo became the source of truth for subsequent `typ` development. The `master` branch ends with that happening.
 
-The history from catapult was reimported (using `git filter-repo`) onto a new `main` branch on 2025-04-18 (using revision [4bbdc693c](https://chromium.googlesource.com/catapult/+/4bbdc693cd3e14ce07921f4de7ec4f834d69a8d1); 
+The history from catapult was reimported (using `git filter-repo`) onto a new `main` branch on 2025-04-18 (using revision [4bbdc693c](https://chromium.googlesource.com/catapult/+/4bbdc693cd3e14ce07921f4de7ec4f834d69a8d1);
 the last change to the typ subdirectory was from [8010a1b2](https://chromium.googlesource.com/catapult/+/8010a1b2f59fe654ca2a5966902a5ebd38d00cb7)).
 
 The first commit post-merge was tagged as v0.12.0.
