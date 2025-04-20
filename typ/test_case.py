@@ -16,7 +16,7 @@ import fnmatch
 import shlex
 import unittest
 
-from typ import host, python_2_3_compat
+from typ import host
 
 
 def convert_newlines(msg):
@@ -147,8 +147,10 @@ class MainTestCase(TestCase):
             result = self.call(host, prog + argv, stdin=stdin, env=env)
 
             actual_ret, actual_out, actual_err = result
-            actual_out = python_2_3_compat.bytes_to_str(actual_out)
-            actual_err = python_2_3_compat.bytes_to_str(actual_err)
+            if isinstance(actual_out, bytes):
+                actual_out = actual_out.decode('utf-8')
+            if isinstance(actual_err, bytes):
+                actual_err = actual_err.decode('utf-8')
             actual_files = self._read_files(host, tmpdir)
         finally:
             host.chdir(orig_wd)

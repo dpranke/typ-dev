@@ -16,14 +16,8 @@ import hashlib
 import logging
 import os
 import sys
+from urllib import parse
 
-if sys.version_info.major == 2:
-  import urlparse
-  import urllib
-  url_quote = urllib.quote
-else:
-  import urllib.parse as urlparse
-  url_quote = urlparse.quote
 
 from typ.host import Host
 
@@ -97,7 +91,7 @@ class Artifacts(object):
     if self._platform == 'win32':
       for c in WINDOWS_FORBIDDEN_PATH_CHARACTERS:
         self._artifacts_base_dir = self._artifacts_base_dir.replace(
-            c, url_quote(c))
+            c, parse.quote(c))
     # A map of artifact names to their filepaths relative to the output
     # directory.
     self.artifacts = {}
@@ -172,7 +166,7 @@ class Artifacts(object):
     # any files.
     path = path.strip()
     # Make sure that what we're given is at least vaguely URL-like.
-    parse_result = urlparse.urlparse(path)
+    parse_result = parse.urlparse(path)
     if not parse_result.scheme or not parse_result.netloc or len(
         path.splitlines()) > 1:
       raise ValueError('Given path %s does not appear to be a URL' % path)

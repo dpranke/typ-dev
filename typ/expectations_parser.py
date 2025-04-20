@@ -16,7 +16,6 @@ import logging
 from collections import Counter, OrderedDict
 from collections import defaultdict
 
-from typ import python_2_3_compat
 from typ import reduced_glob
 from typ.json_results import ResultType
 
@@ -100,8 +99,8 @@ class Expectation(object):
         results = results or {ResultType.Pass}
         reason = reason or ''
         trailing_comments = trailing_comments or ''
-        assert python_2_3_compat.is_str(reason)
-        assert python_2_3_compat.is_str(test)
+        assert isinstance(reason, str)
+        assert isinstance(test, str)
         self._reason = reason
         self._test = test
         self._tags = frozenset(tags)

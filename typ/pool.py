@@ -111,14 +111,7 @@ class _ProcessPool(object):
         # TODO: one would think that we could close self.requests in close(),
         # above, and close self.responses below, but if we do, we get
         # weird tracebacks in the daemon threads multiprocessing starts up.
-        # Instead, we have to hack the innards of multiprocessing. It
-        # seems likely that there's a bug somewhere, either in this module or
-        # in multiprocessing.
-        # pylint: disable=protected-access
-        if self.host.is_python3:  # pragma: python3
-            multiprocessing.queues.is_exiting = lambda: True
-        else:  # pragma: python2
-            multiprocessing.util._exiting = True
+        multiprocessing.queues.is_exiting = lambda: True
 
         if not self.closed:
             # We must be aborting; terminate the workers rather than

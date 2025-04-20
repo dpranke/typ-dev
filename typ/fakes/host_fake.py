@@ -17,15 +17,7 @@ import io
 import logging
 import sys
 
-from typ import python_2_3_compat
 from typ.host import _TeedStream
-
-
-is_python3 = bool(sys.version_info.major == 3)
-
-if is_python3:  # pragma: python3
-    # pylint: disable=redefined-builtin,invalid-name
-    unicode = str
 
 
 class FakeHost(object):
@@ -34,7 +26,6 @@ class FakeHost(object):
     # "unused arg" pylint: disable=W0613
 
     python_interpreter = 'python'
-    is_python3 = bool(sys.version_info.major == 3)
 
     def __init__(self):
         self.logger = logging.getLogger()
@@ -253,7 +244,7 @@ class FakeHost(object):
         self.written_files[full_path] = contents
 
     def fetch(self, url, data=None, headers=None):
-        resp = self.fetch_responses.get(url, FakeResponse(unicode(''), url))
+        resp = self.fetch_responses.get(url, FakeResponse('', url))
         self.fetches.append((url, data, headers, resp))
         return resp
 
@@ -283,8 +274,10 @@ class FakeHost(object):
     def restore_output(self):
         assert isinstance(self.stdout, _TeedStream)
         out, err = (self.stdout.restore(), self.stderr.restore())
-        out = python_2_3_compat.bytes_to_str(out)
-        err = python_2_3_compat.bytes_to_str(err)
+        if isinstance(out, bytes):
+            out = out.decode('utf-8')
+        if isinstance(err, bytes):
+            err = err.decode('utf-8')
         self.logger.handlers = self._orig_logging_handlers
         self._untap_output()
         return out, err

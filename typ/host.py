@@ -21,22 +21,11 @@ import subprocess
 import sys
 import tempfile
 import time
-
-from typ import python_2_3_compat
-
-
-if sys.version_info.major == 2:  # pragma: python2
-    from urllib2 import urlopen, Request
-else:  # pragma: python3
-    # pylint: disable=E0611
-    assert sys.version_info.major == 3
-    from urllib.request import urlopen, Request  # pylint: disable=F0401,E0611
+from urllib.request import urlopen, Request  # pylint: disable=F0401,E0611
 
 
 class Host(object):
     python_interpreter = sys.executable
-    is_python3 = bool(sys.version_info.major == 3)
-
     pathsep = os.pathsep
     sep = os.sep
     env = os.environ
@@ -151,12 +140,9 @@ class Host(object):
         stream = stream or self.stdout
         message = str(msg) + end
         encoding = stream.encoding or 'ascii'
-        if sys.version_info.major == 2:
-            stream.write(message)
-        else:
-            stream.write(
-                message.encode(encoding,
-                               errors='backslashreplace').decode(encoding))
+        stream.write(
+            message.encode(encoding,
+                           errors='backslashreplace').decode(encoding))
         stream.flush()
 
     def read_text_file(self, *comps):
@@ -261,8 +247,10 @@ class Host(object):
     def restore_output(self):
         assert isinstance(self.stdout, _TeedStream)
         out, err = (self.stdout.restore(), self.stderr.restore())
-        out = python_2_3_compat.bytes_to_str(out)
-        err = python_2_3_compat.bytes_to_str(err)
+        if isinstance(out, bytes):
+            out = out.decode('utf-8')
+        if isinstance(err, bytes):
+            err = err.decode('utf-8')
         self.logger.handlers = self._orig_logging_handlers
         self._untap_output()
         return out, err
@@ -282,9 +270,6 @@ class _TeedStream(io.StringIO):
 
     def write(self, msg, *args, **kwargs):
         if self.capturing:
-            if (sys.version_info.major == 2 and
-                    isinstance(msg, str)):  # pragma: python2
-                msg = unicode(msg)
             super(_TeedStream, self).write(msg, *args, **kwargs)
         if not self.diverting:
             self.stream.write(msg, *args, **kwargs)

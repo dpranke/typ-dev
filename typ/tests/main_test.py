@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import textwrap
+import unittest
 
 from typ import main
 from typ import test_case
@@ -25,12 +26,6 @@ from typ import VERSION
 from typ.fakes import test_result_server_fake
 from typ.fakes import host_fake
 
-
-is_python3 = bool(sys.version_info.major == 3)
-
-if is_python3:  # pragma: python3
-    # pylint: disable=redefined-builtin,invalid-name
-    unicode = str
 
 d = textwrap.dedent
 
@@ -253,12 +248,10 @@ class TestCli(test_case.MainTestCase):
                    out=('[1/1] pass_test.PassingTest.test_pass passed (worker 1)\n'
                         '1 test passed, 0 skipped, 0 failures.\n'), err='')
 
+    # TODO(crbug.com/1217850): Figure out why this isn't working
+    # in py3. Do we need to update coverage?
+    @unittest.skipIf(sys.version_info.major == 3, 'fails under python3')
     def test_coverage(self):
-        # TODO(crbug.com/1217850): Figure out why this isn't working
-        # in py3. Do we need to update coverage?
-        if sys.version_info.major == 3:
-            return
-
         try:
             import coverage  # pylint: disable=W0612
             files = {
@@ -283,13 +276,11 @@ class TestCli(test_case.MainTestCase):
             self.check(['-c'], files=PASS_TEST_FILES, ret=1,
                        out='Error: coverage is not installed.\n', err='')
 
+    @unittest.skipIf(sys.version_info.major == 3, 'fails under python3')
     def test_debugger(self):
-        if sys.version_info.major == 3:  # pragma: python3
-            return
-        else:  # pragma: python2
-            _, out, _, _ = self.check(['-d'], stdin='quit()\n',
-                                      files=PASS_TEST_FILES, ret=0, err='')
-            self.assertIn('(Pdb) ', out)
+        _, out, _, _ = self.check(['-d'], stdin='quit()\n',
+                                  files=PASS_TEST_FILES, ret=0, err='')
+        self.assertIn('(Pdb) ', out)
 
     def test_dryrun(self):
         self.check(['-n'], files=PASS_TEST_FILES, ret=0, err='',
@@ -1439,7 +1430,6 @@ class TestMain(TestCli):
         return Host()
 
     def call(self, host, argv, stdin, env):
-        stdin = unicode(stdin)
         host.stdin = io.StringIO(stdin)
         if env:
             host.getenv = env.get

@@ -14,21 +14,11 @@
 
 """A fake implementation of test-results.appspot.com."""
 
+from http.server import BaseHTTPRequestHandler  # pylint: disable=F0401
 import io
+from socketserver import TCPServer  # pylint: disable=F0401
 import sys
 import threading
-
-
-if sys.version_info.major == 2:  # pragma: python2
-    from SimpleHTTPServer import SimpleHTTPRequestHandler as HTTPRequestHandler
-    from SocketServer import TCPServer
-else:  # pragma: python3
-    assert sys.version_info.major == 3
-    # pylint: disable=invalid-name, redefined-builtin
-    unicode = str
-    from http.server import BaseHTTPRequestHandler  # pylint: disable=F0401
-    HTTPRequestHandler = BaseHTTPRequestHandler
-    from socketserver import TCPServer  # pylint: disable=F0401
 
 
 def start(code=200):
@@ -60,10 +50,10 @@ class _Server(TCPServer):
         return self.requests
 
 
-class _RequestHandler(HTTPRequestHandler):
+class _RequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
-        HTTPRequestHandler.__init__(self, *args, **kwargs)
+        BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     # 'Invalid Name' pylint: disable=C0103
     def do_POST(self):
@@ -76,4 +66,4 @@ class _RequestHandler(HTTPRequestHandler):
 
     # 'Redefining built-in' pylint: disable=W0622
     def log_message(self, format, *args):
-        self.server.log.write(unicode('%s\n' % (format % args)))
+        self.server.log.write('%s\n' % (format % args))

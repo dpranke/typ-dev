@@ -153,16 +153,13 @@ class ArtifactsArtifactCreationTests(unittest.TestCase):
     output_dir = '%stmp' % host.sep
     ar = artifacts.Artifacts(output_dir, host, iteration=0)
     file_rel_path = 'a' * (artifacts.WINDOWS_MAX_PATH)
-    if host.is_python3:
-      with self.assertLogs(logging.getLogger(), logging.ERROR) as output:
-        ar.CreateArtifact('artifact_name', file_rel_path, b'contents')
-      for log_line in output.output:
-        if 'exceeds Windows MAX_PATH' in log_line:
-          break
-      else:
-        self.fail('Did not get expected log line')
-    else:
+    with self.assertLogs(logging.getLogger(), logging.ERROR) as output:
       ar.CreateArtifact('artifact_name', file_rel_path, b'contents')
+    for log_line in output.output:
+      if 'exceeds Windows MAX_PATH' in log_line:
+        break
+    else:
+      self.fail('Did not get expected log line')
     self.assertEqual(ar.artifacts, {})
 
   def _test_path_limit_workaround_impl(self, platform, character_limit):

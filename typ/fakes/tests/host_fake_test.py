@@ -17,11 +17,6 @@ import sys
 from typ.tests import host_test
 from typ.fakes.host_fake import FakeHost, FakeResponse
 
-is_python3 = bool(sys.version_info.major == 3)
-
-if is_python3:  # pragma: python3
-    # redefining built-in 'unicode' pylint: disable=W0622
-    unicode = str
 
 class TestFakeHost(host_test.TestHost):
 
@@ -92,7 +87,7 @@ class TestFakeHost(host_test.TestHost):
     def test_fetch(self):
         h = self.host()
         url = 'http://localhost/test'
-        resp = FakeResponse(unicode('foo'), url)
+        resp = FakeResponse('foo', url)
         h.fetch_responses[url] = resp
         actual_resp = h.fetch(url)
         self.assertEqual(actual_resp.geturl(), url)
