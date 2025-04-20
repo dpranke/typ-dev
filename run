@@ -95,7 +95,7 @@ class Runner:
             help='Omit files whose paths match one of these patterns.',
         )
         subp.add_argument(
-            '-u', '--unit', action='store_true', help='Only run unit tests.'
+            '-u', '--unittest', action='store_true', help='Run under unittest.'
         )
         subp.add_argument('test', nargs='*', action='store')
 
@@ -175,7 +175,7 @@ class Runner:
             help='show timing information',
         )
         subp.add_argument(
-            '-u', '--unit', action='store_true', help='Only run unit tests.'
+            '-u', '--unittest', action='store_true', help='Run under unittest.'
         )
         subp.add_argument('test', nargs='*', action='store')
 
@@ -220,27 +220,38 @@ class Runner:
         )
 
     def run_coverage(self):
-        env = os.environ.copy()
-        if self.args.unit:
-            env['SKIP'] = 'integration'
-            self.args.omit = '*_test.py'
-        cmd = self.run_cmd + ['-m', 'coverage', 'run']
-        if self.args.branch:
-            cmd.append('--branch')
-        cmd.extend(
-            [
-                '-m',
-                'typ',
-                '--coverage',
-                '--coverage-omit', '*/site-packages/*',
-            ],
-        )
-        if self.args.verbose:
-            cmd.append('-v')
-        if self.args.show_missing:
-            cmd.append('--coverage-show-missing')
-        cmd.extend(self.args.test)
-        self.call(cmd, env=env)
+        if self.args.unittest:
+            cmd = self.run_cmd + ['-m', 'coverage', 'run']
+            if self.args.branch:
+                cmd.append('--branch')
+            if self.args.verbose:
+                cmd.append('-v')
+            cmd.extend(['--omit', '*/site-packages/*'])
+            cmd.extend(['--omit', '/private/var/*'])
+            if self.args.unittest:
+                cmd.extend(['-m', 'unittest', 'discover', '-p', '*_test.py'])
+            for test in self.args.test:
+                cmd.extend('-k', test)
+        else:
+            cmd.extend(
+                [
+                    '-m',
+                    'typ',
+                    '--coverage',
+                    '--coverage-omit', '*/site-packages/*',
+                ],
+            )
+            if self.args.verbose:
+                cmd.append('-v')
+            if self.args.show_missing:
+                cmd.append('--coverage-show-missing')
+            cmd.extend(self.args.test)
+        self.call(cmd)
+        if self.args.unittest:
+            cmd = self.run_cmd + ['-m', 'coverage', 'report']
+            if self.args.show_missing:
+                cmd.append('--show-missing')
+            self.call(cmd)
 
     def run_devenv(self):
         if self.uv_path is None:
@@ -313,18 +324,24 @@ class Runner:
             )
 
     def run_tests(self):
-        cmd = self.run_cmd + ['-m', 'typ']
-        if self.args.quiet:
-            cmd.append('-q')
-        if self.args.verbose:
-            cmd.append('-v')
-        if self.args.timing:
-            cmd.append('-t')
-        cmd.extend(self.args.test)
-        env = os.environ.copy()
-        if self.args.unit:
-            env['SKIP'] = 'integration'
-        self.call(cmd, env=env)
+        if self.args.unittest:
+            cmd = self.run_cmd + [
+                '-m', 'unittest', 'discover', '-p', '*_test.py'
+            ]
+            if self.args.verbose:
+                cmd.append('-v')
+            for test in self.args.test:
+                cmd.extend('-k', test)
+        else:
+            cmd = self.run_cmd + ['-m', 'typ']
+            if self.args.quiet:
+                cmd.append('-q')
+            if self.args.verbose:
+                cmd.append('-v')
+            if self.args.timing:
+                cmd.append('-t')
+            cmd.extend(self.args.test)
+        self.call(cmd)
 
     def set_func(self, subp, method):
         subp.set_defaults(func=lambda _: method())
