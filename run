@@ -85,6 +85,12 @@ class Runner:
             help='Report branch coverage.',
         )
         subp.add_argument(
+            '-m',
+            '--show-missing',
+            action='store_true',
+            help='Show uncovered lines.',
+        )
+        subp.add_argument(
             '--omit',
             help='Omit files whose paths match one of these patterns.',
         )
@@ -226,16 +232,15 @@ class Runner:
                 '-m',
                 'typ',
                 '--coverage',
+                '--coverage-omit', '*/site-packages/*',
             ],
         )
         if self.args.verbose:
             cmd.append('-v')
+        if self.args.show_missing:
+            cmd.append('--coverage-show-missing')
         cmd.extend(self.args.test)
         self.call(cmd, env=env)
-        cmd = self.run_cmd + ['-m', 'coverage', 'report', '--show-missing']
-        if self.args.omit:
-            cmd.append(f'--omit={self.args.omit}')
-        self.call(cmd)
 
     def run_devenv(self):
         if self.uv_path is None:
