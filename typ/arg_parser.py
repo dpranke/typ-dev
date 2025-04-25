@@ -191,6 +191,8 @@ class ArgumentParser(argparse.ArgumentParser):
                               help='When multiple jobs are used, round-robin '
                                    'assignment of test inputs so the job '
                                    'assignment is stable regardless of runtime.')
+            self.add_argument('-S', '--print-start-time', action='store_true',
+                              help='Print the time before starting testing.')
             self.add_argument('-l', '--list-only', action='store_true',
                               help='Lists all the test names found and exits.')
             self.add_argument('-n', '--dry-run', action='store_true',
@@ -216,6 +218,8 @@ class ArgumentParser(argparse.ArgumentParser):
             self.add_argument('-v', '--verbose', action='count', default=0,
                               help=('Prints more stuff (can specify multiple '
                                     'times for more output).'))
+            self.add_argument('-w', '--print-workers', action='store_true',
+                              help='Print which worker runs each test.')
             self.add_argument('-x', '--tag',
                               dest='tags', default=[], action='append',
                               help=('test tags (conditions) that apply to '

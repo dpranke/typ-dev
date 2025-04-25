@@ -302,7 +302,8 @@ class Runner(object):
             if self.args.list_only:
                 self.print_('\n'.join(all_tests))
             else:
-                self.print_('Start running tests: %s' % str(datetime.now()))
+                if self.args.print_start_time:
+                    self.print_('Start running tests: %s' % str(datetime.now()))
                 for _ in range(self.args.repeat):
                     current_ret, full_results=self._run_tests(
                         result_set, test_set.copy(), all_tests)
@@ -833,7 +834,10 @@ class Runner(object):
             timing_str = ' %.4fs' % result.took
         else:
             timing_str = ''
-        worker_str = ' (worker %d)' % result.worker
+        if self.args.print_workers:
+            worker_str = ' (worker %d)' % result.worker
+        else:
+            worker_str = ''
         suffix = '%s%s%s%s' % (result_str, bug_str, timing_str, worker_str)
         out = result.out
         err = result.err
