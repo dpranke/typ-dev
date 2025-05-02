@@ -103,7 +103,7 @@ line-length = 79
 quote-style = "single"
 
 [tool.setuptools]
-packages = [ "typ" ]
+packages = [ "typ", "typ.fakes" ]
 
 [tool.setuptools.dynamic]
 version = {attr = "typ.__version__"}
