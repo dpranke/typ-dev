@@ -80,7 +80,7 @@ class TestInput(object):
         self.msg = msg
         self.timeout = timeout
         self.expected = expected
-        # Iteration makes more sense as part of the test run, not the test
+# Iteration makes more sense as part of the test run, not the test
         # input, but since the pool used to run tests persists across
         # iterations, we need to store the iteration number in something that
         # gets updated each test run, such as TestInput.
@@ -1080,6 +1080,7 @@ class _Child(object):
         self.worker_num = None
         self.all = parent.args.all
         self.debugger = parent.args.debugger
+        self.post_mortem = parent.args.post_mortem
         self.coverage = parent.args.coverage and parent.args.jobs > 1
         self.coverage_source = parent.coverage_source
         self.dry_run = parent.args.dry_run
@@ -1173,7 +1174,9 @@ def _run_one_test(child, test_input):
     #    uncaptured stdout or stderr that later is used when the test is run.
     # This comes up when using the FakeTestLoader and testing typ itself,
     # but could come up when testing non-typ code as well.
-    h.capture_output(divert=not child.passthrough)
+    if child.debugger:
+        h.print_('')
+    h.capture_output(divert=not child.passthrough, debugger=child.debugger)
     (expected_results,
         should_retry_on_failure,
         associated_bugs) = _get_expectation_information()
@@ -1245,6 +1248,8 @@ def _run_one_test(child, test_input):
     test_result = unittest.TestResult()
     out = ''
     err = ''
+    if child.post_mortem:
+        _patch_test_case_for_post_mortem(test_case)
     try:
         if child.dry_run:
             pass
@@ -1320,9 +1325,62 @@ def _run_under_debugger(host, test_case, suite,
     test_func = getattr(test_case, test_case._testMethodName)
     fname = inspect.getsourcefile(test_func)
     lineno = inspect.getsourcelines(test_func)[1] + 1
-    dbg = pdb.Pdb(stdout=host.stdout.stream)
+    dbg = pdb.Pdb(stdin=_stdin_interceptor(['continue']),
+                  stdout=host.stdout)
     dbg.set_break(fname, lineno)
     dbg.runcall(suite.run, test_result)
+
+
+def _stdin_interceptor(commands):
+    class _Interceptor:
+        def __init__(self, commands):
+            self.commands = commands.copy()
+
+        def close(self):
+            sys.stdin.close()
+
+        def closed(self):
+            if self.commands:
+                return False
+            return sys.stdin.closed()
+
+        def readline(self):
+            if self.commands:
+                cmd = self.commands.pop()
+                return cmd
+            return sys.stdin.readline()
+    return _Interceptor(commands)
+
+
+def _patch_test_case_for_post_mortem(test_case):
+    orig_call_setup = test_case._callSetUp
+    orig_call_test_method = test_case._callTestMethod
+    orig_call_teardown = test_case._callTearDown
+
+    def _wrap(method):
+        try:
+            return method()
+        except KeyboardInterrupt:
+            raise
+        except unittest.case._ShouldStop:
+            pass
+        except:
+            print('')
+            pdb.post_mortem()
+            raise
+
+    def _call_setup():
+        return _wrap(test_case.setUp)
+
+    def _call_testmethod(method):
+        return _wrap(method)
+
+    def _call_teardown():
+        return _wrap(test_case.tearDown)
+
+    test_case._callSetUp = _call_setup
+    test_case._callTestMethod = _call_testmethod
+    test_case._callTearDown = _call_teardown
 
 
 def _result_from_test_result(test_result, test_name, started, took, out, err,

@@ -16,6 +16,7 @@ import io
 import logging
 import multiprocessing
 import os
+import pdb
 import shutil
 import subprocess
 import sys
@@ -227,17 +228,20 @@ class Host(object):
         except Exception:
             return 0
 
-    def _tap_output(self):
-        self.stdout = sys.stdout = _TeedStream(self.stdout)
+    def _tap_output(self, debugger):
+        message_count = 3 if debugger else 0
+        self.stdout = pdb.sys.stdout = sys.stdout = _TeedStream(
+            self.stdout, message_count
+        )
         self.stderr = sys.stderr = _TeedStream(self.stderr)
 
     def _untap_output(self):
         assert isinstance(self.stdout, _TeedStream)
-        self.stdout = sys.stdout = self.stdout.stream
+        self.stdout = sys.stdout = pdb.sys.stdout = self.stdout.stream
         self.stderr = sys.stderr = self.stderr.stream
 
-    def capture_output(self, divert=True):
-        self._tap_output()
+    def capture_output(self, divert=True, debugger=False):
+        self._tap_output(debugger=debugger)
         self._orig_logging_handlers = self.logger.handlers
         if self._orig_logging_handlers:
             self.logger.handlers = [logging.StreamHandler(self.stderr)]
@@ -258,8 +262,10 @@ class Host(object):
 
 class _TeedStream(io.StringIO):
 
-    def __init__(self, stream):
+    def __init__(self, stream, message_count=0):
         super(_TeedStream, self).__init__()
+        self.message_count = message_count
+        self.messages = []
         self.stream = stream
         self.capturing = False
         self.diverting = False
@@ -269,7 +275,10 @@ class _TeedStream(io.StringIO):
         return self.stream.encoding
 
     def write(self, msg, *args, **kwargs):
-        if self.capturing:
+        if len(self.messages) < self.message_count:
+            self.messages.append(msg)
+            return
+        elif self.capturing:
             super(_TeedStream, self).write(msg, *args, **kwargs)
         if not self.diverting:
             self.stream.write(msg, *args, **kwargs)

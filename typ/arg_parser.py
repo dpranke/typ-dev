@@ -182,6 +182,9 @@ class ArgumentParser(argparse.ArgumentParser):
         if running:
             self.add_argument('-d', '--debugger', action='store_true',
                               help='Runs the tests under the debugger.')
+            self.add_argument('--post-mortem', '--pm', action='store_true',
+                              help='Invoke the debugger for unexpected failures'
+                                   ' and uncaught exceptions.')
             self.add_argument('-j', '--jobs', metavar='N', type=int,
                               default=self._host.cpu_count(),
                               help=('Runs N jobs in parallel '
@@ -365,7 +368,7 @@ class ArgumentParser(argparse.ArgumentParser):
         if not rargs.coverage_omit:
             rargs.coverage_omit = DEFAULT_COVERAGE_OMIT
 
-        if rargs.debugger:  # pragma: no cover
+        if rargs.debugger or rargs.post_mortem:  # pragma: no cover
             rargs.jobs = 1
             rargs.passthrough = True
 
