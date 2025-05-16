@@ -463,6 +463,14 @@ class ArgumentParser(argparse.ArgumentParser):
                 # action_str in ('store_true', 'store_false')
                 argv.append(argname)
 
+            # Handle defaults where appropriate; verbose implies these
+            # flags, so you don't have to specify them explicitly.
+            if '--verbose' in argv:
+                if '--print-start-time' in argv:
+                    argv.remove('--print-start-time')
+                if '--print-workers' in argv:
+                    argv.remove('--print-workers')
+
         return argv + tests
 
     def _action_for_key(self, key):
