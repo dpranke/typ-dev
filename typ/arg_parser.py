@@ -192,6 +192,7 @@ class ArgumentParser(argparse.ArgumentParser):
                                    'assignment of test inputs so the job '
                                    'assignment is stable regardless of runtime.')
             self.add_argument('-S', '--print-start-time', action='store_true',
+                              default=None,
                               help='Print the time before starting testing.')
             self.add_argument('-l', '--list-only', action='store_true',
                               help='Lists all the test names found and exits.')
@@ -219,6 +220,9 @@ class ArgumentParser(argparse.ArgumentParser):
                               help=('Prints more stuff (can specify multiple '
                                     'times for more output).'))
             self.add_argument('-w', '--print-workers', action='store_true',
+                              default=None,
+                              help='Print which worker runs each test.')
+            self.add_argument('-W', '--no-print-workers', action='store_false',
                               help='Print which worker runs each test.')
             self.add_argument('-x', '--tag',
                               dest='tags', default=[], action='append',
@@ -365,6 +369,11 @@ class ArgumentParser(argparse.ArgumentParser):
         if rargs.overwrite is None:
             rargs.overwrite = self._host.stdout.isatty() and not rargs.verbose
 
+        if rargs.print_start_time is None:
+            rargs.print_start_time = (rargs.verbose != 0)
+        if rargs.print_workers is None:
+            rargs.print_workers = (rargs.verbose != 0)
+
         if (rargs.test_filter and rargs.coverage):
             # Running a subset of tests will fail coverage check, so explicitly
             # disable coverage when a filter is passed.
@@ -432,7 +441,8 @@ class ArgumentParser(argparse.ArgumentParser):
                 # this arg has the default value, so skip it.
                 continue
 
-            assert action_str in ['append', 'count', 'store', 'store_true']
+            assert action_str in [
+                'append', 'count', 'store', 'store_false', 'store_true']
             if action_str == 'append':
                 for el in v:
                     argv.append(argname)
@@ -444,7 +454,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 argv.append(argname)
                 argv.append(str(v))
             else:
-                # action_str == 'store_true'
+                # action_str in ('store_true', 'store_false')
                 argv.append(argname)
 
         return argv + tests
@@ -465,7 +475,8 @@ def _action_str(action):
         argparse._AppendAction,
         argparse._CountAction,
         argparse._StoreAction,
-        argparse._StoreTrueAction
+        argparse._StoreTrueAction,
+        argparse._StoreFalseAction,
     )
 
     if isinstance(action, argparse._AppendAction):
@@ -474,6 +485,8 @@ def _action_str(action):
         return 'count'
     if isinstance(action, argparse._StoreAction):
         return 'store'
+    if isinstance(action, argparse._StoreFalseAction):
+        return 'store_true'
     if isinstance(action, argparse._StoreTrueAction):
         return 'store_true'
 
