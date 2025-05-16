@@ -1306,6 +1306,11 @@ class TestCli(test_case.MainTestCase):
              '--partial-match-filter', 'PassTest'],
             files=OUTPUT_TEST_FILES, ret=0, err='')
         self.assertIn('2 tests passed, 0 skipped, 0 failures.',out)
+        _, out, _, files = self.check(
+            ['--test-name-prefix', 'output_test.',
+             '--partial-match-filter', 'P*T'],
+            files=OUTPUT_TEST_FILES, ret=0, err='')
+        self.assertIn('2 tests passed, 0 skipped, 0 failures.',out)
 
     def test_test_prefix_exclusion_in_partial_filter_match(self):
         _, out, _, files = self.check(

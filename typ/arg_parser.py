@@ -313,7 +313,8 @@ class ArgumentParser(argparse.ArgumentParser):
                 'be used to match globs to test names. Utilizing a filter will '
                 'disable coverage.')
             self.add_argument(
-                '--partial-match-filter', type=str, default=[], action='append',
+                '-p', '--partial-match-filter', type=str, default=[],
+                action='append',
                 help='Pass a string and Typ will run tests whose names '
                      'partially match the passed string')
 

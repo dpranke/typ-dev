@@ -1023,7 +1023,7 @@ class Runner(object):
                 for glob in self.args.test_filter.split('::'))
         if self.args.partial_match_filter:
             return any(
-                substr in test_name
+                fnmatch.fnmatch(test_name, f'*{substr}*')
                 for substr in self.args.partial_match_filter)
         return True
 
