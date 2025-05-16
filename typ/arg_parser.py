@@ -258,6 +258,8 @@ class ArgumentParser(argparse.ArgumentParser):
                               help=('Retries are only for tests that have the'
                                     ' RetryOnFailure tag in the test'
                                     ' expectations file'))
+            self.add_argument('-F', '--fail-fast', action='store_const',
+                              const=1, dest='typ-max-failures')
             self.add_argument('--typ-max-failures',
                               type=int, default=None,
                               help=('Maximum number of failures that can occur '
@@ -442,7 +444,8 @@ class ArgumentParser(argparse.ArgumentParser):
                 continue
 
             assert action_str in [
-                'append', 'count', 'store', 'store_false', 'store_true']
+                'append', 'count', 'store', 'store_false', 'store_const',
+                'store_true']
             if action_str == 'append':
                 for el in v:
                     argv.append(argname)
@@ -451,6 +454,9 @@ class ArgumentParser(argparse.ArgumentParser):
                 for _ in range(v):
                     argv.append(argname)
             elif action_str == 'store':
+                argv.append(argname)
+                argv.append(str(v))
+            elif action_str == 'store_const':
                 argv.append(argname)
                 argv.append(str(v))
             else:
@@ -477,6 +483,7 @@ def _action_str(action):
         argparse._StoreAction,
         argparse._StoreTrueAction,
         argparse._StoreFalseAction,
+        argparse._StoreConstAction
     )
 
     if isinstance(action, argparse._AppendAction):
@@ -489,6 +496,8 @@ def _action_str(action):
         return 'store_true'
     if isinstance(action, argparse._StoreTrueAction):
         return 'store_true'
+    if isinstance(action, argparse._StoreConstAction):
+        return 'store_const'
 
 
 def _argname_from_key(key):

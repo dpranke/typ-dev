@@ -157,12 +157,16 @@ class RunnerTests(TestCase):
 
     def test_max_failures_fail_if_equal(self):
         r = Runner()
-        r.args.tests = ['typ.tests.runner_test.FailureTests']
+        r.args.tests = [
+            'typ.tests.runner_test.ContextTests',
+            'typ.tests.runner_test.FailureTests'
+        ]
         r.args.jobs = 1
         r.args.typ_max_failures = 1
         r.context = True
-        with self.assertRaises(RuntimeError):
-            r.run()
+        r.run()
+        self.assertEqual(r.stats.failed, 1)
+        self.assertEqual(r.stats.exited_early, True)
 
     def test_max_failures_pass_if_under(self):
         r = Runner()
@@ -174,6 +178,7 @@ class RunnerTests(TestCase):
         r.args.typ_max_failures = 2
         r.context = False
         r.run()
+        self.assertEqual(r.stats.exited_early, False)
 
     def test_max_failures_ignored_if_unset(self):
         r = Runner()
@@ -182,6 +187,7 @@ class RunnerTests(TestCase):
         r.args.typ_max_failures = None
         r.context = True
         r.run()
+        self.assertEqual(r.stats.exited_early, False)
 
     def test_skip_test(self):
         r = Runner()

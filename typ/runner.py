@@ -653,33 +653,35 @@ class Runner(object):
         retry_limit = self.args.retry_limit
         try:
             # Start at 1 since we already did iteration 0 above.
-            for iteration in range(1, self.args.retry_limit + 1):
-                if not tests_to_retry:
-                    break
-                if retry_limit == self.args.retry_limit:
-                    self.flush()
-                    self.args.overwrite = False
-                    self.printer.should_overwrite = False
-                    self.args.verbose = min(self.args.verbose, 1)
+            if (self.args.typ_max_failures is None or
+                self.stats.failed < self.args.typ_max_failures):
+                for iteration in range(1, self.args.retry_limit + 1):
+                    if not tests_to_retry:
+                        break
+                    if retry_limit == self.args.retry_limit:
+                        self.flush()
+                        self.args.overwrite = False
+                        self.printer.should_overwrite = False
+                        self.args.verbose = min(self.args.verbose, 1)
 
-                self.print_('')
-                self.print_('Retrying failed tests (attempt #%d of %d)...' %
-                            (iteration, self.args.retry_limit))
-                self.print_('')
+                    self.print_('')
+                    self.print_('Retrying failed tests (attempt #%d of %d)...' %
+                                (iteration, self.args.retry_limit))
+                    self.print_('')
 
-                stats = Stats(self.args.status_format, h.time, 1)
-                stats.total = len(tests_to_retry)
-                test_set = TestSet(self.args.test_name_prefix)
-                test_set.isolated_tests = [
-                    TestInput(name,
-                        iteration=iteration) for name in tests_to_retry]
-                tests_to_retry = test_set
-                retry_set = ResultSet()
-                self._run_one_set(stats, retry_set, tests_to_retry, 1,
-                                  pool_group)
-                result_set.results.extend(retry_set.results)
-                tests_to_retry = get_tests_to_retry(retry_set)
-                retry_limit -= 1
+                    stats = Stats(self.args.status_format, h.time, 1)
+                    stats.total = len(tests_to_retry)
+                    test_set = TestSet(self.args.test_name_prefix)
+                    test_set.isolated_tests = [
+                        TestInput(name,
+                            iteration=iteration) for name in tests_to_retry]
+                    tests_to_retry = test_set
+                    retry_set = ResultSet()
+                    self._run_one_set(stats, retry_set, tests_to_retry, 1,
+                                      pool_group)
+                    result_set.results.extend(retry_set.results)
+                    tests_to_retry = get_tests_to_retry(retry_set)
+                    retry_limit -= 1
             pool_group.close_global_pool()
         finally:
             self.final_responses.extend(pool_group.join_global_pool())
@@ -691,9 +693,9 @@ class Runner(object):
                                                       int(h.time()),
                                                       all_tests, result_set,
                                                       self.path_delimiter)
+
         retcode = (json_results.exit_code_from_full_results(full_results)
                    | result_sink.result_sink_retcode_from_result_set(result_set))
-
         return (retcode, full_results)
 
     def _run_one_set(self, stats, result_set, test_set, jobs, pool_group):
@@ -763,15 +765,6 @@ class Runner(object):
             result, should_retry_on_failure = pool.get()
             if result.is_regression:
                 stats.failed += 1
-            if (self.args.typ_max_failures is not None
-                and stats.failed >= self.args.typ_max_failures):
-                print('\nAborting, waiting for processes to close')
-                pool.close()
-                pool.join()
-                raise RuntimeError(
-                    'Encountered %d failures with max of %d set, aborting.' % (
-                    stats.failed, self.args.typ_max_failures))
-
             if (self.args.retry_only_retry_on_failure_tests and
                 result.actual == ResultType.Failure and
                 should_retry_on_failure):
@@ -781,6 +774,13 @@ class Runner(object):
             result_set.add(result)
             stats.finished += 1
             self._print_test_finished(stats, result)
+
+            if (self.args.typ_max_failures is not None
+                and stats.failed >= self.args.typ_max_failures):
+                if test_inputs:
+                    self._skip_tests(stats, result_set, test_inputs)
+                    stats.exited_early = True
+                    test_inputs = []
 
     def _print_test_started(self, stats, test_input):
         if self.args.quiet:
@@ -882,13 +882,18 @@ class Runner(object):
                                            self.stats.started_time)
         else:
             timing_clause = ''
-        self.update('%d test%s passed%s, %d skipped, %d failure%s.' %
+        if self.stats.exited_early:
+            exit_early_clause = ' (exited early, max failures reached)'
+        else:
+            exit_early_clause = ''
+        self.update('%d test%s passed%s, %d skipped, %d failure%s%s.' %
                     (num_passes,
                      '' if num_passes == 1 else 's',
                      timing_clause,
                      num_skips,
                      num_failures,
-                     '' if num_failures == 1 else 's'), elide=False)
+                     '' if num_failures == 1 else 's',
+                     exit_early_clause), elide=False)
         self.print_()
         if num_failures or num_regressions:
             regressed_tests = json_results.regressed_tests_names(full_results)

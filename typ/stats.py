@@ -22,6 +22,7 @@ class Stats(object):
         self.started = 0
         self.total = 0
         self.started_time = time_fn()
+        self.exited_early = False
         self._times = []
         self._size = size
         self._time = time_fn
