@@ -1336,32 +1336,68 @@ class TestCli(test_case.MainTestCase):
             files=files, ret=0, err='')
         self.assertIn('test_fail', out)
 
-    def test_no_print_workers(self):
-        self.check(['-W', '-j', '1', 'output_test.PassTest'],
-                   files=OUTPUT_TEST_FILES, ret=0,
-                   out=d("""\
-                         [1/2] output_test.PassTest.test_err passed
-                         [2/2] output_test.PassTest.test_out passed
-                         2 tests passed, 0 skipped, 0 failures.
-                         """), err='')
+    def test_print_start_time(self):
+        # off by default
+        _, out, _, _ = self.check(['output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='',
+                                  ignore_start=False)
+        self.assertNotIn('Start running tests', out)
 
-        # test that printing workers are off by default if not verbose.
-        self.check(['-j', '1', 'output_test.PassTest'],
-                   files=OUTPUT_TEST_FILES, ret=0,
-                   out=d("""\
-                         [1/2] output_test.PassTest.test_err passed
-                         [2/2] output_test.PassTest.test_out passed
-                         2 tests passed, 0 skipped, 0 failures.
-                         """), err='')
+        # on by default w/ -v
+        _, out, _, _ = self.check(['-v', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='',
+                                  ignore_start=False)
+        self.assertIn('Start running tests', out)
+
+        # on when explicitly set
+        _, out, _, _ = self.check(['-S', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='',
+                                  ignore_start=False)
+        self.assertIn('Start running tests', out)
+
+        # off when -T/--no-print-start-time explicitly set
+        _, out, _, _ = self.check(['-T', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='',
+                                  ignore_start=False)
+        self.assertNotIn('Start running tests', out)
+
+        # off when -T overrides verbose
+        _, out, _, _ = self.check(['-v', '-T', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='',
+                                  ignore_start=False)
+        self.assertNotIn('Start running tests', out)
 
     def test_print_workers(self):
-        self.check(['-w', '-j', '1', 'output_test.PassTest'],
-                   files=OUTPUT_TEST_FILES, ret=0,
-                   out=d("""\
-                         [1/2] output_test.PassTest.test_err passed (worker 1)
-                         [2/2] output_test.PassTest.test_out passed (worker 1)
-                         2 tests passed, 0 skipped, 0 failures.
-                         """), err='')
+        # are off by default if not verbose.
+        _, out, _, _ = self.check(['-j', '1', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='')
+        self.assertNotIn('passed (worker 1)', out)
+
+        # on when explicitly set
+        _, out, _, _ = self.check(['-w', '-j', '1', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='')
+        self.assertIn('passed (worker 1)', out)
+
+        # on when derived from verbose
+        _, out, _, _ = self.check(['-v', '-j', '1', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='')
+        self.assertIn('passed (worker 1)', out)
+
+        # off when -W/--no-print-worker is explicitly set
+        _, out, _, _ = self.check(['-W', '-j', '1', 'output_test.PassTest'],
+                                  files=OUTPUT_TEST_FILES, ret=0, err='')
+        self.assertNotIn('passed (worker 1)', out)
+
+        # off when -W/--no-print-workers flag overrides the derived value
+        # from verbose.
+        _, out, _, _ = self.check(
+            ['-W', '-v', '-j', '1', 'output_test.PassTest'],
+            files=OUTPUT_TEST_FILES,
+            ret=0,
+            err=''
+        )
+        self.assertNotIn('passed (worker 1)', out)
+
 
     def test_verbose_2(self):
         # Note that -v enables -w automatically. This tests that the 

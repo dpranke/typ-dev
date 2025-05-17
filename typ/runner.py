@@ -170,11 +170,11 @@ class Runner(object):
 
         # initialize self.args to the defaults.
         parser = ArgumentParser(self.host)
-        self.parse_args(parser, [])
+        self.parse_args(parser, [], derive_values=False)
 
     def main(self, argv=None, **defaults):
         parser = ArgumentParser(self.host)
-        self.parse_args(parser, argv, **defaults)
+        self.parse_args(parser, argv, derive_values=True, **defaults)
         if parser.exit_status is not None:
             return parser.exit_status
 
@@ -226,14 +226,15 @@ class Runner(object):
             self.print_("interrupted, exiting", stream=self.host.stderr)
             return 130
 
-    def parse_args(self, parser, argv, **defaults):
+    def parse_args(self, parser, argv, derive_values=True, **defaults):
         for attrname in defaults:
             if not hasattr(self.args, attrname):
                 parser.error("Unknown default argument name '%s'" % attrname,
                              bailout=False)
                 return
         parser.set_defaults(**defaults)
-        self.args = parser.parse_args(args=argv)
+        self.args = parser.parse_args(args=argv, derive_values=derive_values)
+
         if parser.exit_status is not None:
             return
 

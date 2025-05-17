@@ -116,7 +116,8 @@ class MainTestCase(TestCase):
               prog=None, cwd=None, host=None,
               ret=None, out=None, rout=None, err=None, rerr=None,
               exp_files=None,
-              files_to_ignore=None, universal_newlines=True):
+              files_to_ignore=None, universal_newlines=True,
+              ignore_start=True):
         # Too many arguments pylint: disable=R0913
         prog = prog or self.prog or []
         host = host or self.make_host()
@@ -162,7 +163,7 @@ class MainTestCase(TestCase):
             actual_err = convert_newlines(actual_err)
 
         # Ignore the new logging added for timing.
-        if actual_out.startswith('Start running tests'):
+        if ignore_start and actual_out.startswith('Start running tests'):
             actual_out = '\n'.join(actual_out.split('\n')[1:])
 
         if ret is not None:

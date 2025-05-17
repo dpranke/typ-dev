@@ -108,8 +108,7 @@ class ArgumentParser(argparse.ArgumentParser):
                               help=('Builder name to include in the '
                                     'uploaded data.'))
             self.add_argument('-c', '--coverage', action='store_true',
-                              help=('Reports coverage information. This is '
-                                    'disabled when a test filter is used.'))
+                              help='Reports coverage information.')
             self.add_argument('--coverage-config-file', action='store',
                               help=('Path to a config file for the coverage '
                                     'module'))
@@ -134,8 +133,10 @@ class ArgumentParser(argparse.ArgumentParser):
             self.add_argument('--metadata', action='append', default=[],
                               help=('Optional key=value metadata that will '
                                     'be included in the results.'))
-            self.add_argument('--repository-absolute-path', default='', action='store',
-                              help=('Specifies the absolute path of the repository.'))
+            self.add_argument('--repository-absolute-path', default='',
+                              action='store',
+                              help=('Specifies the absolute path of the '
+                                    'repository.'))
             self.add_argument('--test-results-server',
                               help=('If specified, uploads the full results '
                                     'to this server.'))
@@ -194,9 +195,14 @@ class ArgumentParser(argparse.ArgumentParser):
                               help='When multiple jobs are used, round-robin '
                                    'assignment of test inputs so the job '
                                    'assignment is stable regardless of runtime.')
-            self.add_argument('-S', '--print-start-time', action='store_true',
-                              default=None,
-                              help='Print the time before starting testing.')
+            self.add_argument(
+                '-S', '--print-start-time', action='store_true',
+                default=None, help='Print the start time before starting')
+            self.add_argument(
+                '-T', '--no-print-start-time', action='store_false',
+                dest='print_start_time',
+                help='Do not print the start time before starting'
+            )
             self.add_argument('-l', '--list-only', action='store_true',
                               help='Lists all the test names found and exits.')
             self.add_argument('-n', '--dry-run', action='store_true',
@@ -226,6 +232,7 @@ class ArgumentParser(argparse.ArgumentParser):
                               default=None,
                               help='Print which worker runs each test.')
             self.add_argument('-W', '--no-print-workers', action='store_false',
+                              dest='print_workers',
                               help='Print which worker runs each test.')
             self.add_argument('-x', '--tag',
                               dest='tags', default=[], action='append',
@@ -313,8 +320,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 type=str, default='', action='store',
                 help='Pass a double-colon-separated ("::") list of exact test '
                 'names or globs, to run just that subset of tests. fnmatch will '
-                'be used to match globs to test names. Utilizing a filter will '
-                'disable coverage.')
+                'be used to match globs to test names.')
             self.add_argument(
                 '-p', '--partial-match-filter', type=str, default=[],
                 action='append',
@@ -322,7 +328,7 @@ class ArgumentParser(argparse.ArgumentParser):
                      'partially match the passed string')
 
 
-    def parse_args(self, args=None, namespace=None):
+    def parse_args(self, args=None, namespace=None, derive_values=True):
         try:
             rargs = super(ArgumentParser, self).parse_args(args=args,
                                                            namespace=namespace)
@@ -362,30 +368,34 @@ class ArgumentParser(argparse.ArgumentParser):
                                 rargs.total_shards)
             self.exit_status = 2
 
+        # These two values are set here rather than in derive_values_as_needed
+        # because they're regular defaults that we just can't use as defaults
+        # because of the way `action='append'` works; they aren't derived
+        # from the value of other args.
         if not rargs.suffixes:
             rargs.suffixes = DEFAULT_SUFFIXES
 
         if not rargs.coverage_omit:
             rargs.coverage_omit = DEFAULT_COVERAGE_OMIT
 
-        if rargs.debugger or rargs.post_mortem:  # pragma: no cover
-            rargs.jobs = 1
-            rargs.passthrough = True
-
-        if rargs.overwrite is None:
-            rargs.overwrite = self._host.stdout.isatty() and not rargs.verbose
-
-        if rargs.print_start_time is None:
-            rargs.print_start_time = (rargs.verbose != 0)
-        if rargs.print_workers is None:
-            rargs.print_workers = (rargs.verbose != 0)
-
-        if (rargs.test_filter and rargs.coverage):
-            # Running a subset of tests will fail coverage check, so explicitly
-            # disable coverage when a filter is passed.
-            rargs.coverage = False
+        if derive_values:
+            self.derive_values_as_needed(rargs)
 
         return rargs
+
+    def derive_values_as_needed(self, args):
+        """Set the default values that depend on other args."""
+        if args.debugger or args.post_mortem:  # pragma: no cover
+            args.jobs = 1
+            args.passthrough = True
+
+        if args.overwrite is None:
+            args.overwrite = self._host.stdout.isatty() and not args.verbose
+
+        if args.print_start_time is None:
+            args.print_start_time = (args.verbose != 0)
+        if args.print_workers is None:
+            args.print_workers = (args.verbose != 0)
 
     # Redefining built-in 'file' pylint: disable=W0622
 
@@ -429,14 +439,14 @@ class ArgumentParser(argparse.ArgumentParser):
 
     def argv_from_args(self, args):
         default_parser = ArgumentParser(host=self._host)
-        default_args = default_parser.parse_args([])
+        default_args = default_parser.parse_args([], derive_values=False)
         argv = []
         tests = []
         d = vars(args)
         for k in sorted(d.keys()):
             v = d[k]
             argname = _argname_from_key(k)
-            action = self._action_for_key(k)
+            action = self._action_for_key(k, v)
             if not action:
                 continue
             action_str = _action_str(action)
@@ -463,24 +473,30 @@ class ArgumentParser(argparse.ArgumentParser):
             elif action_str == 'store_const':
                 argv.append(argname)
                 argv.append(str(v))
+            elif action_str == 'store_false':
+                argv.append(argname.replace('--', '--no-'))
             else:
-                # action_str in ('store_true', 'store_false')
+                # action_str == 'store_true'
                 argv.append(argname)
-
-            # Handle defaults where appropriate; verbose implies these
-            # flags, so you don't have to specify them explicitly.
-            if '--verbose' in argv:
-                if '--print-start-time' in argv:
-                    argv.remove('--print-start-time')
-                if '--print-workers' in argv:
-                    argv.remove('--print-workers')
 
         return argv + tests
 
-    def _action_for_key(self, key):
+    def _action_for_key(self, key, value):
         for action in self._actions:
             if action.dest == key:
-                return action
+                if value == True and isinstance(
+                    action, argparse._StoreTrueAction
+                ):
+                    return action
+                if value == False and isinstance(
+                    action, argparse._StoreFalseAction
+                ):
+                    return action
+                if not isinstance(
+                    action,
+                    (argparse._StoreTrueAction, argparse._StoreFalseAction)
+                ):
+                    return action
 
         # Assume foreign argument: something used by the embedder of typ, for
         # example.
@@ -505,7 +521,7 @@ def _action_str(action):
     if isinstance(action, argparse._StoreAction):
         return 'store'
     if isinstance(action, argparse._StoreFalseAction):
-        return 'store_true'
+        return 'store_false'
     if isinstance(action, argparse._StoreTrueAction):
         return 'store_true'
     if isinstance(action, argparse._StoreConstAction):

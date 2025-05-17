@@ -32,17 +32,51 @@ class ArgumentParserTest(unittest.TestCase):
         self.assertEqual(options.jobs, 1)
 
     def test_argv_from_args(self):
-        def check(argv, expected=None):
+        def check(argv, expected):
             parser = ArgumentParser(host=FakeHost())
             args = parser.parse_args(argv)
             actual_argv = parser.argv_from_args(args)
-            expected = expected or argv
             self.assertEqual(expected, actual_argv)
 
-        check(['--version'])
-        check(['--coverage', '--coverage-omit', 'foo'])
-        check(['--jobs', '3'])
-        check(['-vv'], ['--verbose', '--verbose'])
+        check(
+            ['--version'],
+            [
+                '--no-overwrite',
+                '--no-print-start-time',
+                '--no-print-workers',
+                '--version',
+            ]
+        )
+        check(
+            ['--coverage', '--coverage-omit', 'foo'],
+            [
+                '--coverage',
+                '--coverage-omit',
+                'foo',
+                '--no-overwrite',
+                '--no-print-start-time',
+                '--no-print-workers',
+            ]
+        )
+        check(
+            ['--jobs', '3'],
+            [
+                '--jobs', '3',
+                '--no-overwrite',
+                '--no-print-start-time',
+                '--no-print-workers',
+            ]
+        )
+        check(
+            ['-vv'],
+            [
+                '--no-overwrite',
+                '--print-start-time',
+                '--print-workers',
+                '--verbose',
+                '--verbose',
+            ]
+        )
 
     def test_argv_from_args_foreign_argument(self):
         host = FakeHost()
@@ -50,8 +84,14 @@ class ArgumentParserTest(unittest.TestCase):
         parser.add_argument('--some-foreign-argument', default=False,
                             action='store_true')
         args = parser.parse_args(['--some-foreign-argument', '--verbose'])
-        self.assertEqual(['--verbose'],
-                         ArgumentParser(host=host).argv_from_args(args))
+        self.assertEqual(
+            [
+                '--no-overwrite',
+                '--print-start-time',
+                '--print-workers',
+                '--verbose',
+            ],
+            ArgumentParser(host=host).argv_from_args(args))
 
     def test_valid_shard_options(self):
         parser = ArgumentParser()
@@ -82,16 +122,3 @@ class ArgumentParserTest(unittest.TestCase):
 
         parser.parse_args(['--total-shards', '5', '--shard-index', '6'])
         self.assertEqual(parser.exit_status, 2)
-
-    def test_filter_coverage_options(self):
-        parser = ArgumentParser()
-
-        args = parser.parse_args(['--coverage',
-                                  ('--isolated-script-test-filter=blinkpy.'
-                                  'unittest.Test1::blinkpy.unittest.Test2')])
-        self.assertFalse(args.coverage)
-
-        args = parser.parse_args(['--coverage',
-                                  ('--test-filter=blinkpy.unittest.Test1::'
-                                  'blinkpy.unittest.Test2')])
-        self.assertFalse(args.coverage)
