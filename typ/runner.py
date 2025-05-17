@@ -1023,9 +1023,18 @@ class Runner(object):
                 fnmatch.fnmatch(test_name, glob)
                 for glob in self.args.test_filter.split('::'))
         if self.args.partial_match_filter:
-            return any(
-                fnmatch.fnmatch(test_name, f'*{substr}*')
-                for substr in self.args.partial_match_filter)
+            for substr in self.args.partial_match_filter:
+                if substr.startswith('^'):
+                    substr = substr[1:]
+                else:
+                    substr = '*' + substr
+                if substr.endswith('$'):
+                    substr = substr[:-1]
+                else:
+                    substr = substr + '*'
+                if fnmatch.fnmatch(test_name, substr):
+                    return True
+            return False
         return True
 
     def should_isolate(self, test_case):

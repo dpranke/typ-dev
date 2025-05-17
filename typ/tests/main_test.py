@@ -137,6 +137,33 @@ class FailTest(unittest.TestCase):
 OUTPUT_TEST_FILES = {'output_test.py': OUTPUT_TEST_PY}
 
 
+START_TEST_PY = """
+import unittest
+
+class Test(unittest.TestCase):
+    def test_end(self):
+        pass
+
+    def test_start(self):
+        pass
+"""
+
+TEST_PY = """
+import unittest
+
+class Test(unittest.TestCase):
+    def test_start(self):
+        pass
+
+    def test_foo_bar(self):
+        pass
+"""
+
+PARTIAL_MATCH_FILES = {
+   'start_test.py': START_TEST_PY,
+   'test_test.py': TEST_PY
+}
+
 SF_TEST_PY = """
 import sys
 import unittest
@@ -1301,16 +1328,41 @@ class TestCli(test_case.MainTestCase):
                          'retry_1', 'test.txt'), files)
 
     def test_matches_partial_filter(self):
-        _, out, _, files = self.check(
-            ['--test-name-prefix', 'output_test.',
-             '--partial-match-filter', 'PassTest'],
-            files=OUTPUT_TEST_FILES, ret=0, err='')
-        self.assertIn('2 tests passed, 0 skipped, 0 failures.',out)
-        _, out, _, files = self.check(
-            ['--test-name-prefix', 'output_test.',
-             '--partial-match-filter', 'P*T'],
-            files=OUTPUT_TEST_FILES, ret=0, err='')
-        self.assertIn('2 tests passed, 0 skipped, 0 failures.',out)
+        # test that a bare string matches anywhere in the test name.
+        _, out, _, _ = self.check(
+            ['--partial-match-filter', 'start'],
+            files=PARTIAL_MATCH_FILES, ret=0, err='')
+        self.assertIn('3 tests passed', out)
+        self.assertIn('start_test.Test.test_end',out)
+        self.assertIn('start_test.Test.test_start',out)
+        self.assertIn('test_test.Test.test_start',out)
+
+        # test that a string with a trailing '$' only matches at the end.
+        _, out, _, _ = self.check(
+            ['--partial-match-filter', 'start$'],
+            files=PARTIAL_MATCH_FILES, ret=0, err='')
+        self.assertIn('2 tests passed', out)
+        self.assertIn('start_test.Test.test_start',out)
+        self.assertIn('test_test.Test.test_start',out)
+
+        # test that a string with a leading '^' matches at the beginning.
+        # It's not clear how useful the '^' is since a matching prefix
+        # will match anyway, and test names probably rarely have a prefix
+        # as part of a test name elsewhere.
+        _, out, _, _ = self.check(
+            ['--partial-match-filter', '^start'],
+            files=PARTIAL_MATCH_FILES, ret=0, err='')
+        self.assertIn('2 tests passed', out)
+        self.assertIn('start_test.Test.test_start',out)
+        self.assertIn('start_test.Test.test_end',out)
+
+        # check that interior glob matches work.
+        _, out, _, _ = self.check(
+            ['--partial-match-filter', 'f*o'],
+            files=PARTIAL_MATCH_FILES, ret=0, err='')
+        self.assertIn('1 test passed', out)
+        self.assertIn('test_test.Test.test_foo_bar',out)
+
 
     def test_test_prefix_exclusion_in_partial_filter_match(self):
         _, out, _, files = self.check(
