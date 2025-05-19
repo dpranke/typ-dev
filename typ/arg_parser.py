@@ -269,7 +269,7 @@ class ArgumentParser(argparse.ArgumentParser):
                                     ' RetryOnFailure tag in the test'
                                     ' expectations file'))
             self.add_argument('-F', '--fail-fast', action='store_const',
-                              const=1, dest='typ-max-failures')
+                              const=1, dest='typ_max_failures')
             self.add_argument('--typ-max-failures',
                               type=int, default=None,
                               help=('Maximum number of failures that can occur '
