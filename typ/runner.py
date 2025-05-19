@@ -471,6 +471,7 @@ class Runner(object):
                 source = self.top_level_dirs + self.args.path
             self.coverage_source = source
             self.cov = coverage.Coverage(source=self.coverage_source,
+                                         branch=self.args.coverage_branch,
                                          data_suffix=True)
             self.cov.erase()
 
@@ -946,7 +947,9 @@ class Runner(object):
     def report_coverage(self):  # pragma: no cover
         self.host.print_()
         import coverage
-        cov = coverage.Coverage(data_suffix=True)
+        cov = coverage.Coverage(
+            data_suffix=True, branch=self.args.coverage_branch
+        )
         cov.combine()
         percentage = cov.report(show_missing=self.args.coverage_show_missing,
                                 omit=self.args.coverage_omit)
@@ -1092,6 +1095,7 @@ class _Child(object):
         self.debugger = parent.args.debugger
         self.post_mortem = parent.args.post_mortem
         self.coverage = parent.args.coverage and parent.args.jobs > 1
+        self.coverage_branch = parent.args.coverage_branch
         self.coverage_source = parent.coverage_source
         self.dry_run = parent.args.dry_run
         self.loader = parent.loader
@@ -1130,6 +1134,7 @@ def _setup_process(host, worker_num, child):
     if child.coverage:  # pragma: no cover
         import coverage
         child.cov = coverage.Coverage(source=child.coverage_source,
+                                      branch=child.coverage_branch,
                                       data_suffix=True)
         child.cov._warn_no_data = False
         child.cov.start()

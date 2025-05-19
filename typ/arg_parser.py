@@ -22,7 +22,7 @@ class _Bailout(Exception):
     pass
 
 
-DEFAULT_COVERAGE_OMIT = ['*/typ/*', '*/site-packages/*']
+DEFAULT_COVERAGE_OMIT = ['*/typ/*']
 DEFAULT_STATUS_FORMAT = '[%f/%t] '
 DEFAULT_SUFFIXES = ['*_test.py', '*_unittest.py']
 
@@ -112,6 +112,9 @@ class ArgumentParser(argparse.ArgumentParser):
             self.add_argument('--coverage-config-file', action='store',
                               help=('Path to a config file for the coverage '
                                     'module'))
+            self.add_argument('-B', '--coverage-branch', action='store_true',
+                              default=False,
+                              help='Report branch coverage, not statement')
             self.add_argument('--coverage-source', action='append',
                               default=[],
                               help=('Directories to include when running and '

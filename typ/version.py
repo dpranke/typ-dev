@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '2.0.0.dev3'
+__version__ = '2.0.0.dev4'
 
 # For backward-compatibility with earlier versions of TYP.
 VERSION = __version__
